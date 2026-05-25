@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Yuga Farms — WhatsApp service (`yuga-farms-wa`)
 
-## Getting Started
+Separate Next.js app on the **same VPS** as `YugaFarms` (storefront) and `YugaFarmsBackend` (Strapi).  
+All WhatsApp messaging, webhooks, and scheduling live here — not in the storefront or Strapi.
 
-First, run the development server:
+## Client flows
+
+| Trigger | Message |
+|--------|---------|
+| Order placed | Thank you (immediate) |
+| Order `DELIVERED` in Strapi + cron | Review ask (~4 days after delivery) |
+| Same | Other-product insights (~10 days) |
+| Same | Repurchase reminder per variant weight (e.g. 500→12d, 1000→25d) |
+| Cart updated (storefront) | Snapshot + optional chatbot webhook; WA text only if `WA_SEND_CART_MESSAGES=true` |
+
+## Setup
+
+1. Copy `.env.example` → `.env.local` and fill Meta WhatsApp Cloud API values.
+2. Set `STRAPI_DATABASE_PATH` to the Strapi SQLite file (read-only), e.g. `../YugaFarmsBackend/.tmp/data.db`.
+3. Use the **same** `WA_INTERNAL_SECRET` in `YugaFarms` `.env.local` as `NEXT_PUBLIC_WA_SERVICE_URL` + server secret.
+4. Install and run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev   # port 3001 by default
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Meta webhook URL: `https://<your-wa-host>/api/webhooks/whatsapp`
+6. Cron on VPS (every 5–15 min):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+curl -s -H "x-cron-secret: YOUR_CRON_SECRET" "https://<your-wa-host>/api/cron/process-messages"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Mark orders **DELIVERED** in Strapi admin when shipped — cron schedules review / insights / repurchase messages.
 
-## Learn More
+## API (internal)
 
-To learn more about Next.js, take a look at the following resources:
+| Endpoint | Auth | Purpose |
+|----------|------|---------|
+| `POST /api/internal/order-placed` | `x-wa-internal-secret` | Queue thank-you + process immediate sends |
+| `POST /api/internal/cart-sync` | `x-wa-internal-secret` | Save cart snapshot + chatbot webhook |
+| `GET /api/cron/process-messages` | `x-cron-secret` | Delivered-order scan + send due messages |
+| `GET/POST /api/webhooks/whatsapp` | Meta verify token / signature | Inbound messages & status |
+| `GET /api/health` | — | Health check |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Databases
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Strapi** (`STRAPI_DATABASE_PATH`): read-only orders, users, cart JSON.
+- **Local** (`WA_DATABASE_PATH`): scheduled messages, cart snapshots, logs.
 
-## Deploy on Vercel
+## Product consumption cycles
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Configure in `.env`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```env
+PRODUCT_CONSUMPTION_CYCLES={"500":12,"1000":25,"250":7}
+```
+
+Keys match `weight` on cart line items (from Strapi variant `Weight`).
