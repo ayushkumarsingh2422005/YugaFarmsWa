@@ -29,7 +29,15 @@ export default function InboxPage() {
   const [thread, setThread] = useState<ThreadEvent[]>([]);
   const [draft, setDraft] = useState("");
   const [sendError, setSendError] = useState("");
+  const [sendInfo, setSendInfo] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendMode, setSendMode] = useState<"text" | "template">("text");
+  const [templateName, setTemplateName] = useState("");
+  const [templateLanguage, setTemplateLanguage] = useState("en");
+  const [templateParams, setTemplateParams] = useState("");
+  const [fallbackTemplateName, setFallbackTemplateName] = useState("");
+  const [fallbackTemplateLanguage, setFallbackTemplateLanguage] = useState("en");
+  const [fallbackTemplateParams, setFallbackTemplateParams] = useState("");
 
   async function loadConversations() {
     const res = await fetch(
@@ -71,21 +79,54 @@ export default function InboxPage() {
 
   async function onSend(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!selectedPhone || !draft.trim()) return;
+    if (!selectedPhone) return;
+    if (sendMode === "text" && !draft.trim()) return;
+    if (sendMode === "template" && !templateName.trim()) return;
     setSending(true);
     setSendError("");
+    setSendInfo("");
     const res = await fetch("/api/admin/send/manual", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: selectedPhone, message: draft.trim() }),
+      body: JSON.stringify({
+        phone: selectedPhone,
+        mode: sendMode,
+        message: draft.trim(),
+        templateName: templateName.trim() || undefined,
+        templateLanguage: templateLanguage.trim() || "en",
+        templateParams: templateParams
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean),
+        fallbackTemplateName: fallbackTemplateName.trim() || undefined,
+        fallbackTemplateLanguage: fallbackTemplateLanguage.trim() || "en",
+        fallbackTemplateParams: fallbackTemplateParams
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean),
+      }),
     });
-    const data = (await res.json().catch(() => ({}))) as { error?: string; warning?: string };
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      warning?: string;
+      usedMode?: "text" | "template";
+      fallbackUsed?: boolean;
+    };
     if (!res.ok) {
       setSendError(data.error ?? "Send failed");
       setSending(false);
       return;
     }
     setDraft("");
+    if (data.fallbackUsed) {
+      setSendInfo("Free-form failed; template fallback sent successfully.");
+    } else {
+      setSendInfo(
+        data.usedMode === "template"
+          ? "Template message sent successfully."
+          : "Text message sent successfully."
+      );
+    }
     setSending(false);
     await loadThread(selectedPhone);
     await loadConversations();
@@ -131,7 +172,7 @@ export default function InboxPage() {
         <div className="border-b p-3">
           <h2 className="font-semibold">{selectedConversation?.phone ?? "Select a conversation"}</h2>
           <p className="text-xs text-neutral-600">
-            Free-form sends may fail outside WhatsApp policy windows.
+            You can send free-form text or approved template messages.
           </p>
         </div>
 
@@ -158,18 +199,89 @@ export default function InboxPage() {
         </div>
 
         <form onSubmit={onSend} className="border-t p-3">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={3}
-            className="w-full rounded border px-3 py-2 text-sm"
-            placeholder="Type a manual WhatsApp message..."
-          />
+          <div className="mb-2 flex items-center gap-3 text-sm">
+            <label className="flex items-center gap-1">
+              <input
+                type="radio"
+                name="sendMode"
+                checked={sendMode === "text"}
+                onChange={() => setSendMode("text")}
+              />
+              Text
+            </label>
+            <label className="flex items-center gap-1">
+              <input
+                type="radio"
+                name="sendMode"
+                checked={sendMode === "template"}
+                onChange={() => setSendMode("template")}
+              />
+              Template
+            </label>
+          </div>
+
+          {sendMode === "text" ? (
+            <>
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={3}
+                className="w-full rounded border px-3 py-2 text-sm"
+                placeholder="Type a manual WhatsApp message..."
+              />
+              <div className="mt-2 grid gap-2 md:grid-cols-3">
+                <input
+                  value={fallbackTemplateName}
+                  onChange={(e) => setFallbackTemplateName(e.target.value)}
+                  placeholder="Fallback template name (optional)"
+                  className="rounded border px-2 py-2 text-xs"
+                />
+                <input
+                  value={fallbackTemplateLanguage}
+                  onChange={(e) => setFallbackTemplateLanguage(e.target.value)}
+                  placeholder="Fallback lang (e.g. en)"
+                  className="rounded border px-2 py-2 text-xs"
+                />
+                <input
+                  value={fallbackTemplateParams}
+                  onChange={(e) => setFallbackTemplateParams(e.target.value)}
+                  placeholder="Fallback params comma separated"
+                  className="rounded border px-2 py-2 text-xs"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="grid gap-2 md:grid-cols-3">
+              <input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="Template name"
+                className="rounded border px-2 py-2 text-sm"
+              />
+              <input
+                value={templateLanguage}
+                onChange={(e) => setTemplateLanguage(e.target.value)}
+                placeholder="Language code (e.g. en)"
+                className="rounded border px-2 py-2 text-sm"
+              />
+              <input
+                value={templateParams}
+                onChange={(e) => setTemplateParams(e.target.value)}
+                placeholder="Body params comma separated"
+                className="rounded border px-2 py-2 text-sm"
+              />
+            </div>
+          )}
           {sendError ? <p className="mt-2 text-sm text-red-600">{sendError}</p> : null}
+          {sendInfo ? <p className="mt-2 text-sm text-green-700">{sendInfo}</p> : null}
           <div className="mt-2 flex justify-end">
             <button
               type="submit"
-              disabled={sending || !selectedPhone || !draft.trim()}
+              disabled={
+                sending ||
+                !selectedPhone ||
+                (sendMode === "text" ? !draft.trim() : !templateName.trim())
+              }
               className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
             >
               {sending ? "Sending..." : "Send"}
