@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import { env } from "@/lib/env";
+import { normalizePhone } from "@/lib/phone";
 
 let strapiDb: Database.Database | null = null;
 
@@ -72,4 +73,53 @@ export function getUserCart(userId: number): { cart: string | null; phone: strin
     .prepare(`SELECT cart, phone FROM up_users WHERE id = ?`)
     .get(userId) as { cart: string | null; phone: string | null } | undefined;
   return row ?? null;
+}
+
+export function listUsersWithPhone(limit = 1000) {
+  const db = getStrapiDb();
+  if (!db) return [];
+  const rows = db
+    .prepare(
+      `SELECT id, phone
+       FROM up_users
+       WHERE phone IS NOT NULL AND phone <> ''
+       ORDER BY id DESC
+       LIMIT ?`
+    )
+    .all(limit) as Array<{ id: number; phone: string | null }>;
+  return rows
+    .map((row) => ({ id: row.id, phone: normalizePhone(row.phone) }))
+    .filter((row): row is { id: number; phone: string } => Boolean(row.phone));
+}
+
+export function listDeliveredOrdersForSegments(limit = 2000) {
+  const rows = getOrdersByStatus("DELIVERED", limit);
+  return rows
+    .map((row) => {
+      const direct = normalizePhone(row.phone);
+      let shippingPhone: string | null = null;
+      try {
+        const shipping = JSON.parse(row.shipping_address || "{}") as { phone?: string };
+        shippingPhone = normalizePhone(shipping.phone);
+      } catch {
+        shippingPhone = null;
+      }
+      let items: Array<{ weight?: number; productTitle?: string }> = [];
+      try {
+        items = JSON.parse(row.items) as Array<{ weight?: number; productTitle?: string }>;
+      } catch {
+        items = [];
+      }
+      return {
+        id: row.id,
+        userId: row.user_id,
+        phone: direct ?? shippingPhone,
+        updatedAt: row.updated_at,
+        items,
+      };
+    })
+    .filter(
+      (row): row is { id: number; userId: number | null; phone: string; updatedAt: string; items: Array<{ weight?: number; productTitle?: string }> } =>
+        Boolean(row.phone)
+    );
 }

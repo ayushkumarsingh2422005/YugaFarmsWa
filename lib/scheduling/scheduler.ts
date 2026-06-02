@@ -192,6 +192,8 @@ function buildBody(
         totalPrice: Number(payload?.totalPrice ?? 0),
         lines: (payload?.items as CartLine[]) ?? [],
       });
+    case "campaign_broadcast":
+      return String(payload?.body ?? "Message from Yuga Farms");
     default:
       return "Message from Yuga Farms";
   }

@@ -44,6 +44,14 @@ export const env = {
   sendCartMessages: optional("WA_SEND_CART_MESSAGES", "false") === "true",
   storefrontUrl: optional("STOREFRONT_URL", "https://yugafarms.com"),
   supportPhone: optional("SUPPORT_PHONE", "919671012177"),
+  admin: {
+    password: () => required("ADMIN_DASHBOARD_PASSWORD"),
+    sessionSecret: () => required("ADMIN_SESSION_SECRET"),
+    sessionTtlHours: Math.max(
+      1,
+      parseInt(optional("ADMIN_SESSION_TTL_HOURS", "24"), 10)
+    ),
+  },
 };
 
 export function isWhatsAppConfigured(): boolean {
