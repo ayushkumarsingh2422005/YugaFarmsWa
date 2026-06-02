@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     if (!map.has(user.phone)) {
       map.set(user.phone, {
         phone: user.phone,
-        last_at: null,
+        last_at: "",
         last_direction: "outbound" as const,
         last_preview: null,
         outbound_count: 0,
