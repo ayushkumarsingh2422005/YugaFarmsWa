@@ -22,6 +22,40 @@ type ThreadEvent = {
   created_at: string;
 };
 
+function formatInboundPayload(evt: ThreadEvent): string {
+  if (!evt.payload) return "(empty event)";
+  try {
+    const parsed = JSON.parse(evt.payload) as {
+      text?: { body?: string };
+      status?: string;
+      timestamp?: string;
+      type?: string;
+      recipient_id?: string;
+      from?: string;
+    };
+
+    if (parsed.text?.body) {
+      return parsed.text.body;
+    }
+    if (parsed.status) {
+      return `Status update: ${parsed.status}`;
+    }
+    if (parsed.type && parsed.from) {
+      return `Incoming ${parsed.type} from ${parsed.from}`;
+    }
+    return "Webhook event received";
+  } catch {
+    return evt.payload.slice(0, 200);
+  }
+}
+
+function renderThreadBody(evt: ThreadEvent): string {
+  if (evt.direction === "outbound") {
+    return evt.body ?? "(empty outbound message)";
+  }
+  return formatInboundPayload(evt);
+}
+
 export default function InboxPage() {
   const [search, setSearch] = useState("");
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -186,8 +220,11 @@ export default function InboxPage() {
             >
               <p className="text-[11px] uppercase text-neutral-500">{evt.direction}</p>
               <p className="whitespace-pre-wrap break-words">
-                {evt.body ?? evt.payload ?? "(empty event)"}
+                {renderThreadBody(evt)}
               </p>
+              {evt.message_type ? (
+                <p className="mt-1 text-[11px] text-neutral-500">Type: {evt.message_type}</p>
+              ) : null}
               <p className="mt-1 text-[11px] text-neutral-500">
                 {new Date(evt.created_at).toLocaleString()}
               </p>
