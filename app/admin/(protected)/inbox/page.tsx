@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 
 type Conversation = {
   phone: string;
-  last_at: string;
+  last_at: string | null;
   last_direction: "inbound" | "outbound";
   last_preview: string | null;
   outbound_count: number;
   inbound_count: number;
+  has_activity?: boolean;
 };
 
 type ThreadEvent = {
@@ -112,7 +113,9 @@ export default function InboxPage() {
               }`}
             >
               <p className="font-medium">{row.phone}</p>
-              <p className="text-xs text-neutral-600">{row.last_preview ?? "No preview"}</p>
+              <p className="text-xs text-neutral-600">
+                {row.last_preview ?? "No messages yet. You can start chat now."}
+              </p>
               <p className="mt-1 text-[11px] text-neutral-500">
                 In:{row.inbound_count} Out:{row.outbound_count}
               </p>
