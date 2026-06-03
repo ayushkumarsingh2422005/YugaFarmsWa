@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 type OrderRow = {
   strapi_order_id: number;
@@ -48,23 +49,26 @@ export default function OrdersPage() {
 
   return (
     <section className="space-y-4">
-      <div className="rounded border bg-white p-4">
-        <h2 className="text-lg font-semibold">Order Tracking</h2>
-        <p className="text-sm text-neutral-600">
-          Review delivery sync state and follow-up scheduling.
-        </p>
-        <button
-          onClick={() => void syncDeliveredNow()}
-          disabled={syncing}
-          className="mt-3 rounded bg-black px-3 py-2 text-sm text-white disabled:opacity-60"
-        >
-          {syncing ? "Syncing..." : "Sync Delivered Orders Now"}
-        </button>
+      <div className="wa-card overflow-hidden">
+        <AdminPageHeader
+          title="Order Tracking"
+          description="Review delivery sync state and follow-up scheduling."
+        />
+        <div className="p-4">
+          <button
+            type="button"
+            onClick={() => void syncDeliveredNow()}
+            disabled={syncing}
+            className="wa-btn-primary"
+          >
+            {syncing ? "Syncing..." : "Sync Delivered Orders Now"}
+          </button>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded border bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-neutral-50 text-left">
+      <div className="wa-table-wrap">
+        <table className="wa-table">
+          <thead>
             <tr>
               <th className="px-3 py-2">Order</th>
               <th className="px-3 py-2">Phone</th>
@@ -92,8 +96,9 @@ export default function OrdersPage() {
                 <td className="px-3 py-2">{new Date(row.updated_at).toLocaleString()}</td>
                 <td className="px-3 py-2">
                   <button
+                    type="button"
                     onClick={() => void recompute(row.strapi_order_id)}
-                    className="rounded border px-2 py-1 text-xs"
+                    className="wa-btn-secondary wa-btn-xs"
                   >
                     Recompute Followups
                   </button>
@@ -102,7 +107,7 @@ export default function OrdersPage() {
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-neutral-500">
+                <td colSpan={8} className="py-8 text-center text-[#2D2D2D]/55">
                   No order tracking rows yet.
                 </td>
               </tr>

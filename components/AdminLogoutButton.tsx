@@ -7,11 +7,7 @@ export function AdminLogoutButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={onLogout}
-      className="rounded border px-3 py-1 text-sm hover:bg-neutral-100"
-    >
+    <button type="button" onClick={onLogout} className="wa-btn-ghost">
       Logout
     </button>
   );

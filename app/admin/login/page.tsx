@@ -30,32 +30,37 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6">
-      <form
-        onSubmit={onSubmit}
-        className="w-full rounded-lg border bg-white p-6 shadow-sm"
-      >
-        <h1 className="text-xl font-semibold">WhatsApp Admin Login</h1>
-        <p className="mt-1 text-sm text-neutral-600">
-          Use the dashboard password configured on this server.
-        </p>
-        <label className="mt-4 block text-sm font-medium">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-full rounded border px-3 py-2"
-          placeholder="Enter admin password"
-          required
-        />
-        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-5 w-full rounded bg-black px-4 py-2 text-white disabled:opacity-60"
-        >
-          {loading ? "Signing in..." : "Sign in"}
-        </button>
+    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6 py-12">
+      <form onSubmit={onSubmit} className="wa-card w-full overflow-hidden p-0">
+        <div className="wa-card-header text-center">
+          <p className="font-brand text-3xl text-[#4b2e19]">YugaFarms</p>
+          <h1 className="wa-page-title mt-2">WhatsApp Admin</h1>
+          <p className="wa-subtitle mt-1">
+            Sign in to manage customer chats, campaigns, and automations.
+          </p>
+        </div>
+        <div className="p-6">
+          <label className="wa-label" htmlFor="admin-password">
+            Dashboard password
+          </label>
+          <input
+            id="admin-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="wa-input"
+            placeholder="Enter admin password"
+            required
+          />
+          {error ? <p className="wa-alert-error mt-3">{error}</p> : null}
+          <button
+            type="submit"
+            disabled={loading}
+            className="wa-btn-primary mt-5 w-full py-3"
+          >
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
+        </div>
       </form>
     </main>
   );

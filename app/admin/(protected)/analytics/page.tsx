@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 type AnalyticsPayload = {
   summary: {
@@ -35,45 +36,71 @@ export default function AnalyticsPage() {
   }, []);
 
   if (!data) {
-    return <p className="text-sm text-neutral-600">Loading analytics...</p>;
+    return <p className="wa-subtitle">Loading analytics...</p>;
   }
+
+  const maxOutbound = Math.max(
+    1,
+    ...data.summary.outboundSeries.map((p) => p.total)
+  );
 
   return (
     <section className="space-y-4">
+      <div className="wa-card overflow-hidden">
+        <AdminPageHeader
+          title="Analytics"
+          description="WhatsApp delivery volume and campaign performance."
+        />
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card title="Outbound Sent" value={data.summary.sent} />
-        <Card title="Outbound Failed" value={data.summary.failed} />
-        <Card title="Pending Queue" value={data.summary.pending} />
-        <Card title="Inbound Events" value={data.summary.inbound} />
+        <StatCard title="Outbound Sent" value={data.summary.sent} />
+        <StatCard title="Outbound Failed" value={data.summary.failed} />
+        <StatCard title="Pending Queue" value={data.summary.pending} />
+        <StatCard title="Inbound Events" value={data.summary.inbound} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded border bg-white p-4">
-          <h3 className="font-semibold">Outbound Volume (30 days)</h3>
-          <div className="mt-3 space-y-2">
+        <div className="wa-card p-5">
+          <h3 className="wa-title">Outbound Volume (30 days)</h3>
+          <div className="mt-4 space-y-3">
             {data.summary.outboundSeries.map((point) => (
-              <div key={point.day} className="flex items-center gap-2 text-sm">
-                <span className="w-28 text-neutral-600">{point.day}</span>
-                <div
-                  className="h-2 rounded bg-black"
-                  style={{ width: `${Math.max(4, Math.min(point.total * 8, 280))}px` }}
-                />
-                <span>{point.total}</span>
+              <div key={point.day} className="flex items-center gap-3 text-sm">
+                <span className="w-28 shrink-0 text-[#2D2D2D]/65">{point.day}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#eef2e9]">
+                  <div
+                    className="wa-bar h-full"
+                    style={{ width: `${(point.total / maxOutbound) * 100}%` }}
+                  />
+                </div>
+                <span className="w-8 font-bold text-[#4b2e19]">{point.total}</span>
               </div>
             ))}
             {data.summary.outboundSeries.length === 0 ? (
-              <p className="text-sm text-neutral-500">No outbound events yet.</p>
+              <p className="wa-subtitle">No outbound events yet.</p>
             ) : null}
           </div>
         </div>
 
-        <div className="rounded border bg-white p-4">
-          <h3 className="font-semibold">Campaign Stats</h3>
-          <ul className="mt-3 space-y-2 text-sm">
-            <li>Total campaigns: {data.campaignStats.total}</li>
-            <li>Running/scheduled: {data.campaignStats.running}</li>
-            <li>Completed: {data.campaignStats.completed}</li>
-            <li>Failed: {data.campaignStats.failed}</li>
+        <div className="wa-card p-5">
+          <h3 className="wa-title">Campaign Stats</h3>
+          <ul className="mt-4 space-y-3 text-sm">
+            <li className="flex justify-between border-b border-[#4b2e19]/10 pb-2">
+              <span className="text-[#2D2D2D]/70">Total campaigns</span>
+              <span className="font-bold text-[#4b2e19]">{data.campaignStats.total}</span>
+            </li>
+            <li className="flex justify-between border-b border-[#4b2e19]/10 pb-2">
+              <span className="text-[#2D2D2D]/70">Running / scheduled</span>
+              <span className="font-bold text-[#4b2e19]">{data.campaignStats.running}</span>
+            </li>
+            <li className="flex justify-between border-b border-[#4b2e19]/10 pb-2">
+              <span className="text-[#2D2D2D]/70">Completed</span>
+              <span className="font-bold text-[#4b2e19]">{data.campaignStats.completed}</span>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-[#2D2D2D]/70">Failed</span>
+              <span className="font-bold text-[#4b2e19]">{data.campaignStats.failed}</span>
+            </li>
           </ul>
         </div>
       </div>
@@ -81,11 +108,11 @@ export default function AnalyticsPage() {
   );
 }
 
-function Card({ title, value }: { title: string; value: number }) {
+function StatCard({ title, value }: { title: string; value: number }) {
   return (
-    <div className="rounded border bg-white p-4">
-      <p className="text-sm text-neutral-600">{title}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    <div className="wa-stat-card">
+      <p>{title}</p>
+      <p>{value}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 type CampaignRow = {
   id: number;
@@ -147,23 +148,23 @@ export default function CampaignsPage() {
 
   return (
     <section className="space-y-4">
-      <div className="rounded border bg-white p-4">
-        <h2 className="text-lg font-semibold">Campaign Builder</h2>
-        <p className="text-sm text-neutral-600">
-          Free-form campaign sends may fail by WhatsApp policy; errors are retained per recipient.
-        </p>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="wa-card overflow-hidden">
+        <AdminPageHeader
+          title="Campaign Builder"
+          description="Free-form campaign sends may fail by WhatsApp policy; errors are retained per recipient."
+        />
+        <div className="grid gap-3 p-4 md:grid-cols-2">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Campaign name"
-            className="rounded border px-3 py-2 text-sm"
+            className="wa-input"
           />
           <input
             value={target.manualTagIds}
             onChange={(e) => setTarget((t) => ({ ...t, manualTagIds: e.target.value }))}
             placeholder="Manual tag IDs (comma separated)"
-            className="rounded border px-3 py-2 text-sm"
+            className="wa-input"
           />
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -199,43 +200,40 @@ export default function CampaignsPage() {
             type="date"
             value={target.deliveredAfter}
             onChange={(e) => setTarget((t) => ({ ...t, deliveredAfter: e.target.value }))}
-            className="rounded border px-3 py-2 text-sm"
+            className="wa-input"
           />
           <input
             value={target.deliveredWeightIn}
             onChange={(e) => setTarget((t) => ({ ...t, deliveredWeightIn: e.target.value }))}
             placeholder="Delivered weights (e.g. 500,1000)"
-            className="rounded border px-3 py-2 text-sm md:col-span-2"
+            className="wa-input md:col-span-2"
           />
         </div>
         <textarea
           value={messageBody}
           onChange={(e) => setMessageBody(e.target.value)}
           rows={4}
-          className="mt-3 w-full rounded border px-3 py-2 text-sm"
+          className="wa-textarea mx-4 mb-4"
           placeholder="Campaign message body..."
         />
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button onClick={() => void preview()} className="rounded border px-3 py-2 text-sm">
+        <div className="flex flex-wrap gap-2 px-4 pb-4">
+          <button type="button" onClick={() => void preview()} className="wa-btn-secondary">
             Preview Audience
           </button>
-          <button
-            onClick={() => void createCampaign()}
-            className="rounded bg-black px-3 py-2 text-sm text-white"
-          >
+          <button type="button" onClick={() => void createCampaign()} className="wa-btn-primary">
             Create Campaign
           </button>
         </div>
         {previewCount != null ? (
-          <p className="mt-2 text-sm text-neutral-700">Preview recipients: {previewCount}</p>
+          <p className="wa-subtitle px-4 pb-2">Preview recipients: {previewCount}</p>
         ) : null}
-        {feedback ? <p className="mt-1 text-sm text-neutral-700">{feedback}</p> : null}
+        {feedback ? <p className="wa-subtitle px-4 pb-4">{feedback}</p> : null}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_400px]">
-        <div className="overflow-x-auto rounded border bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-neutral-50 text-left">
+        <div className="wa-table-wrap">
+          <table className="wa-table">
+            <thead>
               <tr>
                 <th className="px-3 py-2">Name</th>
                 <th className="px-3 py-2">Status</th>
@@ -256,17 +254,19 @@ export default function CampaignsPage() {
                   <td className="px-3 py-2">
                     <div className="flex gap-2">
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedId(row.id);
                           void loadDetails(row.id);
                         }}
-                        className="rounded border px-2 py-1 text-xs"
+                        className="wa-btn-secondary wa-btn-xs"
                       >
                         View
                       </button>
                       <button
+                        type="button"
                         onClick={() => void start(row.id)}
-                        className="rounded border px-2 py-1 text-xs"
+                        className="wa-btn-primary wa-btn-xs"
                       >
                         Start
                       </button>
@@ -276,7 +276,7 @@ export default function CampaignsPage() {
               ))}
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-neutral-500">
+                  <td colSpan={5} className="py-8 text-center text-[#2D2D2D]/55">
                     No campaigns yet.
                   </td>
                 </tr>
@@ -285,11 +285,11 @@ export default function CampaignsPage() {
           </table>
         </div>
 
-        <aside className="rounded border bg-white p-3">
-          <h3 className="font-semibold">
+        <aside className="wa-card p-4">
+          <h3 className="wa-title">
             Campaign Details {selectedId ? `#${selectedId}` : ""}
           </h3>
-          <pre className="mt-2 max-h-[480px] overflow-auto whitespace-pre-wrap text-xs text-neutral-700">
+          <pre className="mt-3 max-h-[480px] overflow-auto whitespace-pre-wrap rounded-lg bg-[#f5f2ea] p-3 text-xs text-[#2D2D2D]/80">
             {selectedDetail || "Select a campaign to inspect recipients and statuses."}
           </pre>
         </aside>

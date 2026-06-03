@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 type ScheduledRow = {
   id: number;
@@ -47,16 +48,16 @@ export default function ScheduledPage() {
 
   return (
     <section className="space-y-4">
-      <div className="rounded border bg-white p-4">
-        <h2 className="text-lg font-semibold">Scheduled Messages</h2>
-        <p className="text-sm text-neutral-600">
-          Manage pending, failed, and cancelled queue items.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+      <div className="wa-card overflow-hidden">
+        <AdminPageHeader
+          title="Scheduled Messages"
+          description="Manage pending, failed, and cancelled queue items."
+        />
+        <div className="flex flex-wrap gap-2 p-4">
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="rounded border px-2 py-2 text-sm"
+            className="wa-select w-auto min-w-[140px]"
           >
             <option value="all">All</option>
             <option value="pending">Pending</option>
@@ -68,17 +69,17 @@ export default function ScheduledPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="Filter by phone"
-            className="rounded border px-2 py-2 text-sm"
+            className="wa-input max-w-xs"
           />
-          <button onClick={() => void load()} className="rounded border px-3 py-2 text-sm">
+          <button type="button" onClick={() => void load()} className="wa-btn-secondary">
             Apply
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded border bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-neutral-50 text-left">
+      <div className="wa-table-wrap">
+        <table className="wa-table">
+          <thead>
             <tr>
               <th className="px-3 py-2">ID</th>
               <th className="px-3 py-2">Phone</th>
@@ -97,29 +98,32 @@ export default function ScheduledPage() {
                 <td className="px-3 py-2">{row.message_type}</td>
                 <td className="px-3 py-2">{row.status}</td>
                 <td className="px-3 py-2">{new Date(row.scheduled_at).toLocaleString()}</td>
-                <td className="px-3 py-2 text-red-700">{row.error ?? "-"}</td>
-                <td className="px-3 py-2">
+                <td className="text-red-700">{row.error ?? "-"}</td>
+                <td>
                   <div className="flex flex-wrap gap-2">
                     <button
+                      type="button"
                       onClick={() => void doAction("/api/admin/scheduled/retry", { id: row.id })}
-                      className="rounded border px-2 py-1 text-xs"
+                      className="wa-btn-secondary wa-btn-xs"
                     >
                       Retry
                     </button>
                     <button
+                      type="button"
                       onClick={() => void doAction("/api/admin/scheduled/cancel", { id: row.id })}
-                      className="rounded border px-2 py-1 text-xs"
+                      className="wa-btn-secondary wa-btn-xs"
                     >
                       Cancel
                     </button>
                     <button
+                      type="button"
                       onClick={() =>
                         void doAction("/api/admin/scheduled/reschedule", {
                           id: row.id,
                           scheduledAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
                         })
                       }
-                      className="rounded border px-2 py-1 text-xs"
+                      className="wa-btn-secondary wa-btn-xs"
                     >
                       +5m
                     </button>
@@ -129,7 +133,7 @@ export default function ScheduledPage() {
             ))}
             {!loading && rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-neutral-500">
+                <td colSpan={7} className="py-8 text-center text-[#2D2D2D]/55">
                   No records found.
                 </td>
               </tr>

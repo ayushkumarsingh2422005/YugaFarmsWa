@@ -28,18 +28,12 @@ function formatInboundPayload(evt: ThreadEvent): string {
     const parsed = JSON.parse(evt.payload) as {
       text?: { body?: string };
       status?: string;
-      timestamp?: string;
       type?: string;
-      recipient_id?: string;
       from?: string;
     };
 
-    if (parsed.text?.body) {
-      return parsed.text.body;
-    }
-    if (parsed.status) {
-      return `Status update: ${parsed.status}`;
-    }
+    if (parsed.text?.body) return parsed.text.body;
+    if (parsed.status) return `Status update: ${parsed.status}`;
     if (parsed.type && parsed.from) {
       return `Incoming ${parsed.type} from ${parsed.from}`;
     }
@@ -142,9 +136,8 @@ export default function InboxPage() {
     });
     const data = (await res.json().catch(() => ({}))) as {
       error?: string;
-      warning?: string;
-      usedMode?: "text" | "template";
       fallbackUsed?: boolean;
+      usedMode?: "text" | "template";
     };
     if (!res.ok) {
       setSendError(data.error ?? "Send failed");
@@ -167,77 +160,84 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="grid min-h-[70vh] grid-cols-[340px_1fr] gap-4">
-      <section className="rounded border bg-white p-3">
-        <div className="mb-2">
+    <div className="wa-inbox">
+      <aside className="wa-chat-sidebar">
+        <div className="wa-chat-sidebar-head">
+          <h2 className="wa-title">Conversations</h2>
+          <p className="wa-subtitle mt-1">Customer WhatsApp threads</p>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by phone"
-            className="w-full rounded border px-2 py-2 text-sm"
+            placeholder="Search by phone number..."
+            className="wa-input mt-3"
           />
         </div>
-        <div className="space-y-2 overflow-y-auto">
+        <div className="wa-conversation-list">
           {conversations.map((row) => (
             <button
               key={row.phone}
               type="button"
               onClick={() => setSelectedPhone(row.phone)}
-              className={`w-full rounded border p-2 text-left text-sm ${
-                selectedPhone === row.phone ? "bg-neutral-100" : "bg-white"
+              className={`wa-conversation-item ${
+                selectedPhone === row.phone ? "wa-conversation-item--active" : ""
               }`}
             >
-              <p className="font-medium">{row.phone}</p>
-              <p className="text-xs text-neutral-600">
-                {row.last_preview ?? "No messages yet. You can start chat now."}
+              <p className="font-bold text-[#4b2e19]">{row.phone}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-[#2D2D2D]/70">
+                {row.last_preview ?? "No messages yet — start the chat"}
               </p>
-              <p className="mt-1 text-[11px] text-neutral-500">
-                In:{row.inbound_count} Out:{row.outbound_count}
+              <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-[#4b2e19]/55">
+                In {row.inbound_count} · Out {row.outbound_count}
               </p>
             </button>
           ))}
           {conversations.length === 0 ? (
-            <p className="text-sm text-neutral-500">No conversations yet.</p>
+            <p className="px-2 py-4 text-center text-sm text-[#2D2D2D]/60">
+              No conversations yet.
+            </p>
           ) : null}
         </div>
-      </section>
+      </aside>
 
-      <section className="flex flex-col rounded border bg-white">
-        <div className="border-b p-3">
-          <h2 className="font-semibold">{selectedConversation?.phone ?? "Select a conversation"}</h2>
-          <p className="text-xs text-neutral-600">
-            You can send free-form text or approved template messages.
+      <section className="wa-chat-main">
+        <div className="wa-chat-header">
+          <h2>{selectedConversation?.phone ?? "Select a conversation"}</h2>
+          <p>
+            Reply with free-form text (24h window) or an approved Meta template.
           </p>
         </div>
 
-        <div className="flex-1 space-y-2 overflow-y-auto p-3">
+        <div className="wa-chat-thread">
           {thread.map((evt) => (
             <div
               key={`${evt.direction}-${evt.id}`}
-              className={`max-w-[80%] rounded border px-3 py-2 text-sm ${
-                evt.direction === "outbound" ? "ml-auto bg-green-50" : "bg-neutral-50"
+              className={`wa-bubble ${
+                evt.direction === "outbound" ? "wa-bubble--out" : "wa-bubble--in"
               }`}
             >
-              <p className="text-[11px] uppercase text-neutral-500">{evt.direction}</p>
-              <p className="whitespace-pre-wrap break-words">
-                {renderThreadBody(evt)}
-              </p>
+              <p className="whitespace-pre-wrap break-words">{renderThreadBody(evt)}</p>
               {evt.message_type ? (
-                <p className="mt-1 text-[11px] text-neutral-500">Type: {evt.message_type}</p>
+                <p className="wa-bubble-meta">Type: {evt.message_type}</p>
               ) : null}
-              <p className="mt-1 text-[11px] text-neutral-500">
+              <p className="wa-bubble-meta">
+                {evt.direction === "outbound" ? "Sent" : "Received"} ·{" "}
                 {new Date(evt.created_at).toLocaleString()}
               </p>
             </div>
           ))}
           {thread.length === 0 ? (
-            <p className="text-sm text-neutral-500">No events for this phone.</p>
+            <div className="mx-auto max-w-sm rounded-xl border border-dashed border-[#4b2e19]/20 bg-white/80 px-6 py-8 text-center">
+              <p className="text-sm font-semibold text-[#4b2e19]">No messages yet</p>
+              <p className="mt-1 text-xs text-[#2D2D2D]/65">
+                Pick a customer on the left or send the first message below.
+              </p>
+            </div>
           ) : null}
         </div>
 
-        <form onSubmit={onSend} className="border-t p-3">
-          <div className="mb-2 flex items-center gap-3 text-sm">
-            <label className="flex items-center gap-1">
+        <form onSubmit={onSend} className="wa-chat-compose">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <label className="wa-radio-pill">
               <input
                 type="radio"
                 name="sendMode"
@@ -246,7 +246,7 @@ export default function InboxPage() {
               />
               Text
             </label>
-            <label className="flex items-center gap-1">
+            <label className="wa-radio-pill">
               <input
                 type="radio"
                 name="sendMode"
@@ -263,27 +263,30 @@ export default function InboxPage() {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={3}
-                className="w-full rounded border px-3 py-2 text-sm"
-                placeholder="Type a manual WhatsApp message..."
+                className="wa-textarea"
+                placeholder="Type your WhatsApp reply..."
               />
+              <p className="wa-subtitle mt-2 text-xs">
+                Optional template fallback if free-form is blocked
+              </p>
               <div className="mt-2 grid gap-2 md:grid-cols-3">
                 <input
                   value={fallbackTemplateName}
                   onChange={(e) => setFallbackTemplateName(e.target.value)}
-                  placeholder="Fallback template name (optional)"
-                  className="rounded border px-2 py-2 text-xs"
+                  placeholder="Fallback template name"
+                  className="wa-input text-xs"
                 />
                 <input
                   value={fallbackTemplateLanguage}
                   onChange={(e) => setFallbackTemplateLanguage(e.target.value)}
-                  placeholder="Fallback lang (e.g. en)"
-                  className="rounded border px-2 py-2 text-xs"
+                  placeholder="Language (en)"
+                  className="wa-input text-xs"
                 />
                 <input
                   value={fallbackTemplateParams}
                   onChange={(e) => setFallbackTemplateParams(e.target.value)}
-                  placeholder="Fallback params comma separated"
-                  className="rounded border px-2 py-2 text-xs"
+                  placeholder="Params, comma separated"
+                  className="wa-input text-xs"
                 />
               </div>
             </>
@@ -293,25 +296,27 @@ export default function InboxPage() {
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
                 placeholder="Template name"
-                className="rounded border px-2 py-2 text-sm"
+                className="wa-input"
               />
               <input
                 value={templateLanguage}
                 onChange={(e) => setTemplateLanguage(e.target.value)}
-                placeholder="Language code (e.g. en)"
-                className="rounded border px-2 py-2 text-sm"
+                placeholder="Language (en)"
+                className="wa-input"
               />
               <input
                 value={templateParams}
                 onChange={(e) => setTemplateParams(e.target.value)}
-                placeholder="Body params comma separated"
-                className="rounded border px-2 py-2 text-sm"
+                placeholder="Body params, comma separated"
+                className="wa-input"
               />
             </div>
           )}
-          {sendError ? <p className="mt-2 text-sm text-red-600">{sendError}</p> : null}
-          {sendInfo ? <p className="mt-2 text-sm text-green-700">{sendInfo}</p> : null}
-          <div className="mt-2 flex justify-end">
+
+          {sendError ? <p className="wa-alert-error mt-3">{sendError}</p> : null}
+          {sendInfo ? <p className="wa-alert-success mt-3">{sendInfo}</p> : null}
+
+          <div className="mt-3 flex justify-end">
             <button
               type="submit"
               disabled={
@@ -319,9 +324,9 @@ export default function InboxPage() {
                 !selectedPhone ||
                 (sendMode === "text" ? !draft.trim() : !templateName.trim())
               }
-              className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
+              className="wa-btn-gold min-w-[140px]"
             >
-              {sending ? "Sending..." : "Send"}
+              {sending ? "Sending..." : "Send message"}
             </button>
           </div>
         </form>

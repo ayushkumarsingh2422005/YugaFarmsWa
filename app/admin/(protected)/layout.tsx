@@ -1,16 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAdminFromCookies } from "@/lib/auth/admin";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
-
-const navItems = [
-  { href: "/admin/inbox", label: "Inbox" },
-  { href: "/admin/scheduled", label: "Scheduled" },
-  { href: "/admin/orders", label: "Orders" },
-  { href: "/admin/campaigns", label: "Campaigns" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/settings", label: "Settings" },
-];
+import { AdminNav } from "@/components/admin/AdminNav";
 
 export default async function ProtectedAdminLayout({
   children,
@@ -23,27 +14,24 @@ export default async function ProtectedAdminLayout({
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold">Yuga Farms WA Dashboard</h1>
-            <nav className="flex items-center gap-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded px-2 py-1 text-sm hover:bg-neutral-100"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+    <div className="wa-shell">
+      <header className="wa-header">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-4">
+            <div>
+              <p className="font-brand text-xl text-[#f5d26a] leading-none">
+                YugaFarms
+              </p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-white/75">
+                WhatsApp Console
+              </p>
+            </div>
+            <AdminNav />
           </div>
           <AdminLogoutButton />
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-5">{children}</main>
+      <main className="wa-main">{children}</main>
     </div>
   );
 }
