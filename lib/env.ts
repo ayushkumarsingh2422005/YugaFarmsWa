@@ -43,7 +43,12 @@ export const env = {
   cartWebhookSecret: optional("WHATSAPP_CART_WEBHOOK_SECRET"),
   sendCartMessages: optional("WA_SEND_CART_MESSAGES", "false") === "true",
   storefrontUrl: optional("STOREFRONT_URL", "https://yugafarms.com"),
-  supportPhone: optional("SUPPORT_PHONE", "919671012177"),
+  supportPhone: optional("SUPPORT_PHONE", "919671324344"),
+  autoReplyEnabled: optional("WA_AUTO_REPLY_ENABLED", "true") !== "false",
+  autoReplyCooldownSec: Math.max(
+    15,
+    parseInt(optional("WA_AUTO_REPLY_COOLDOWN_SEC", "45"), 10)
+  ),
   admin: {
     password: () => required("ADMIN_DASHBOARD_PASSWORD"),
     sessionSecret: () => required("ADMIN_SESSION_SECRET"),

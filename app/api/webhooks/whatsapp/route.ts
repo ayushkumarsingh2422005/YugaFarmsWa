@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { handleInboundAutoReply } from "@/lib/auto-reply/handler";
 import { logInbound } from "@/lib/db/wa-db";
 import {
   verifyWebhookChallenge,
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
   const entries = (body.entry as unknown[]) ?? [];
   let messageCount = 0;
   let statusCount = 0;
+  let autoReplyCount = 0;
   for (const entry of entries) {
     const changes = ((entry as { changes?: unknown[] }).changes) ?? [];
     for (const change of changes) {
@@ -64,6 +66,12 @@ export async function POST(req: NextRequest) {
         const phone = normalizePhone(m.from);
         if (phone) {
           logInbound(m.id ?? null, phone, m.type ?? "message", message);
+          const reply = await handleInboundAutoReply({
+            phone,
+            text: m.text?.body,
+            messageType: m.type ?? "text",
+          });
+          if (reply.sent) autoReplyCount += 1;
         }
       }
       const statuses = (value.statuses as unknown[]) ?? [];
@@ -82,6 +90,7 @@ export async function POST(req: NextRequest) {
     entries: entries.length,
     messages: messageCount,
     statuses: statusCount,
+    autoReplies: autoReplyCount,
   });
 
   return NextResponse.json({ received: true });

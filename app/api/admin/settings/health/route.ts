@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
       cronLastFinishedAt: cronLastFinished?.value ?? null,
       cronLastResult: cronLastResult?.value ?? null,
       manualTagCount: listManualTags().length,
+      autoReplyEnabled: env.autoReplyEnabled,
+      autoReplyCooldownSec: env.autoReplyCooldownSec,
     },
   });
 }

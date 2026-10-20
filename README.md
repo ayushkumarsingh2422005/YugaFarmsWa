@@ -12,6 +12,23 @@ All WhatsApp messaging, webhooks, and scheduling live here — not in the storef
 | Same | Other-product insights (~10 days) |
 | Same | Repurchase reminder per variant weight (e.g. 500→12d, 1000→25d) |
 | Cart updated (storefront) | Snapshot + optional chatbot webhook; WA text only if `WA_SEND_CART_MESSAGES=true` |
+| Customer texts on WhatsApp | Keyword auto-reply (HELP, ORDER, CART, SHOP, ratings 1–5, etc.) |
+
+## Auto-reply keywords
+
+When `WA_AUTO_REPLY_ENABLED=true`, inbound text on the Meta webhook gets an instant reply (with per-rule cooldown):
+
+| Customer sends | Bot replies with |
+|----------------|------------------|
+| HI, HELLO, NAMASTE, START | Welcome + menu |
+| HELP, MENU | Same menu |
+| ORDER, STATUS, TRACK | Latest orders from Strapi (by phone) |
+| CART | Saved cart snapshot (if any) |
+| SHOP, GHEE, HONEY, BUY | Shop links |
+| 1–5 or "4 star" | Thank-you for rating |
+| THANKS | Short acknowledgement |
+| Anything else | Menu (max once per hour per phone) |
+| Image/audio/etc. | Prompt to send text or HELP |
 
 ## Setup
 

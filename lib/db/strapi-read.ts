@@ -92,6 +92,36 @@ export function listUsersWithPhone(limit = 1000) {
     .filter((row): row is { id: number; phone: string } => Boolean(row.phone));
 }
 
+/** Latest orders for a WhatsApp number (user phone or shipping address). */
+export function getRecentOrdersByPhone(
+  phoneE164: string,
+  limit = 3
+): StrapiOrderRow[] {
+  const db = getStrapiDb();
+  if (!db) return [];
+
+  const digits = phoneE164.replace(/\D/g, "");
+  const last10 = digits.slice(-10);
+  if (last10.length < 10) return [];
+
+  const pattern = `%${last10}%`;
+  const rows = db
+    .prepare(
+      `SELECT o.id, o.order_number, o.order_status, o.items, o.shipping_address, o.total, o.updated_at,
+              u.id AS user_id, u.phone
+       FROM orders o
+       LEFT JOIN orders_user_lnk l ON l.order_id = o.id
+       LEFT JOIN up_users u ON u.id = l.user_id
+       WHERE REPLACE(REPLACE(REPLACE(COALESCE(u.phone, ''), ' ', ''), '+', ''), '-', '') LIKE ?
+          OR o.shipping_address LIKE ?
+       ORDER BY o.updated_at DESC
+       LIMIT ?`
+    )
+    .all(pattern, pattern, limit) as StrapiOrderRow[];
+
+  return rows;
+}
+
 export function listDeliveredOrdersForSegments(limit = 2000) {
   const rows = getOrdersByStatus("DELIVERED", limit);
   return rows

@@ -158,6 +158,15 @@ function migrate(database: Database.Database) {
       value TEXT,
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS auto_reply_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      rule_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_auto_reply_phone_rule
+      ON auto_reply_log(phone, rule_id, created_at);
   `);
   try {
     database.exec(
@@ -845,6 +854,64 @@ export function analyticsSummary(days = 14) {
     inbound: inbound.total ?? 0,
     outboundSeries,
   };
+}
+
+export type CartSnapshotRow = {
+  user_id: number;
+  phone: string | null;
+  items_json: string;
+  total_items: number;
+  total_price: number;
+  updated_at: string;
+};
+
+export function getCartSnapshotByPhone(phone: string): CartSnapshotRow | null {
+  const digits = phone.replace(/\D/g, "");
+  const last10 = digits.slice(-10);
+  if (!last10) return null;
+
+  const row = getWaDb()
+    .prepare(
+      `SELECT user_id, phone, items_json, total_items, total_price, updated_at
+       FROM cart_snapshots
+       WHERE phone = ?
+          OR REPLACE(REPLACE(REPLACE(COALESCE(phone, ''), ' ', ''), '+', ''), '-', '') LIKE ?
+       ORDER BY updated_at DESC
+       LIMIT 1`
+    )
+    .get(phone, `%${last10}%`) as CartSnapshotRow | undefined;
+
+  return row ?? null;
+}
+
+export function shouldSendAutoReply(
+  phone: string,
+  ruleId: string,
+  cooldownSeconds: number
+): boolean {
+  if (cooldownSeconds <= 0) return true;
+  const row = getWaDb()
+    .prepare(
+      `SELECT created_at FROM auto_reply_log
+       WHERE phone = ? AND rule_id = ?
+       ORDER BY created_at DESC
+       LIMIT 1`
+    )
+    .get(phone, ruleId) as { created_at: string } | undefined;
+
+  if (!row) return true;
+
+  const last = new Date(row.created_at).getTime();
+  if (Number.isNaN(last)) return true;
+  return Date.now() - last >= cooldownSeconds * 1000;
+}
+
+export function recordAutoReply(phone: string, ruleId: string) {
+  getWaDb()
+    .prepare(
+      `INSERT INTO auto_reply_log (phone, rule_id) VALUES (?, ?)`
+    )
+    .run(phone, ruleId);
 }
 
 export function listCartSnapshotPhones(limit = 2000) {

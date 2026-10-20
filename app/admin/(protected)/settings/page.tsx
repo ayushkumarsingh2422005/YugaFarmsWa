@@ -16,6 +16,8 @@ type SettingsHealth = {
     cronLastFinishedAt: string | null;
     cronLastResult: string | null;
     manualTagCount: number;
+    autoReplyEnabled: boolean;
+    autoReplyCooldownSec: number;
   };
 };
 
@@ -77,7 +79,12 @@ export default function SettingsPage() {
           <HealthItem label="Internal Secret Configured" ok={h.internalSecretConfigured} />
           <HealthItem label="Webhook Verify Token" ok={h.webhookVerifyTokenConfigured} />
           <HealthItem label="Webhook App Secret" ok={h.webhookAppSecretConfigured} />
+          <HealthItem label="Auto-reply enabled" ok={h.autoReplyEnabled} />
         </div>
+        <p className="mt-3 text-sm text-[#2D2D2D]/75">
+          Auto-reply cooldown: {h.autoReplyCooldownSec}s per rule (unknown messages
+          menu: 1× per hour).
+        </p>
         <div className="space-y-1 border-t border-[#4b2e19]/10 px-4 py-4 text-sm text-[#2D2D2D]/75">
           <p>Last cron started: {h.cronLastStartedAt ?? "Not recorded"}</p>
           <p>Last cron finished: {h.cronLastFinishedAt ?? "Not recorded"}</p>
